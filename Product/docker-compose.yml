@@ -1,0 +1,30 @@
+version: '2.0'
+
+services: 
+  docker-mysql:
+    image: my-mysql:latest
+    ports:
+      - 3308:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=mypass
+      - MYSQL_DATABASE=products
+
+  product-app:
+    image: spring-boot-docker:latest
+    command: >
+      /bin/bash -c "
+        sleep 20;
+        nc -lk 0.0.0.0 8080;
+      "
+    depends_on:
+      - docker-mysql
+    ports:
+      - 8090:8080
+    environment:
+      - DATABASE_HOST=docker-mysql
+      - DATABASE_USER=monty
+      - DATABASE_PASSWORD=some_pass
+      - DATABASE_NAME=test
+      - SLEEP_LENGTH=20
+    
+  
