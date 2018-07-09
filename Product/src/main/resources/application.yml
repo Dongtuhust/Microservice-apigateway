@@ -1,0 +1,6 @@
+spring:
+  cloud:
+    consul:
+      discovery:
+        healthCheckPath: /actuator/health
+        healthCheckInterval: 20s

@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.javafaker.Faker;
@@ -44,8 +45,8 @@ public class ProductController {
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
     }
     )
-	@RequestMapping(value = "/{page}/{size}", method = RequestMethod.GET, produces = "application/json")
-    public  Page<Product> list(@PathVariable int page,@PathVariable int size,Model model){
+	@RequestMapping( method = RequestMethod.GET, produces = "application/json")
+    public  Page<Product> list(@RequestParam(value="page",defaultValue="0") int page,@RequestParam(value="size",defaultValue="20") int size,Model model){
         @SuppressWarnings("deprecation")
         PageRequest pageRequest = new PageRequest(page,size);
 		Page<Product> productList = productService.listAllByPage(pageRequest,page,size);
