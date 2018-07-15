@@ -1,30 +1,62 @@
-version: '2.0'
+version: '3.0'
 
-services: 
-  docker-mysql:
-    image: my-mysql:latest
+services:
+  consul-server:
+    image: gliderlabs/consul-server
     ports:
-      - 3308:3306
+      - 8500:8500
+      - 172.17.0.1:53:8600/udp
+      - 8400:8400
     environment:
-      - MYSQL_ROOT_PASSWORD=mypass
-      - MYSQL_DATABASE=products
-
-  product-app:
-    image: spring-boot-docker:latest
-    command: >
-      /bin/bash -c "
-        sleep 20;
-        nc -lk 0.0.0.0 8080;
-      "
+      - CONSUL_BIND_INTERFACE=eth0
+    command: "-node=myconsul -bootstrap -ui"
+  consul-client1:
+    image: gliderlabs/consul-server
     depends_on:
-      - docker-mysql
+      - consul-server
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    command: "-node=client-1 -dev -join=172.18.0.2"
+  consul-client2:
+    image: gliderlabs/consul-server
+    depends_on:
+      - consul-client1
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    command: "-node=client-2 -dev -join=172.18.0.2"
+  product-service1:
+    image: dongtu/api-gateway:v3     
+    ports:
+      - 8080:8080
+    environment:
+      - SERVICE_ID=web-1
+      - SERVICE_NAME=product-service-1
+      - SERVICE_8080_CHECK_TCP=/health
+  product-service2:
+    image: dongtu/api-gateway:v3
     ports:
       - 8090:8080
     environment:
-      - DATABASE_HOST=docker-mysql
-      - DATABASE_USER=monty
-      - DATABASE_PASSWORD=some_pass
-      - DATABASE_NAME=test
-      - SLEEP_LENGTH=20
-    
-  
+      - SERVICE_ID=web-2
+      - SERVICE_NAME=product-service-2
+      - SERVICE_8090_CHECK_HTTP=/health
+  nginx:
+    image: nginx:latest
+    ports:
+      - 90:80
+    environment:
+      - SERVICE_ID=nginx
+      - SERVICE_NAME=webnginx
+      - SERVICE_90_CHECK_TCP=/health 
+    deploy:
+      replicas : 10
+  haproxy:
+    image: haproxy:1.7
+    ports:
+      - 8000:8000
+    environment:
+      - SERVICE_ID=haproxy
+      - SERVICE_NAME=haproxy
+      - SERVICE_8000_CHECK_HTTP=/health
+    volumes:
+      - /etc/haproxy:/usr/local/etc/haproxy:ro
